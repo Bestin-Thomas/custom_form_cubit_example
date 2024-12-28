@@ -1,96 +1,124 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 
-enum FormFieldControllerStatus { pure, dirty }
+/// Represents a form error, which contains an error message.
+class FormError {
+  /// The error message associated with the form control.
+  final String message;
 
-/// Represents a single form control that holds a value, validation logic, and a stream to listen for changes.
+  /// Creates a [FormError] with the given error message.
+  FormError(this.message);
+}
+
+/// Represents the status of a form control, indicating its state.
+///
+/// - [pristine]: The control has not been interacted with.
+/// - [dirty]: The control's value has been changed.
+/// - [valid]: The control's value passes all validations.
+/// - [invalid]: The control's value fails at least one validation.
+enum FormControlStatus { pristine, dirty, valid, invalid }
+
+/// A form control that manages the value, validation, and state of a field.
+///
+/// [T] is the type of the value managed by the control.
 class FormControl<T> {
-  T? _value;
-  final List<String? Function(T? value)> _validators;
-  String? _error;
-  FormFieldControllerStatus _status = FormFieldControllerStatus.pure;
-  
-  // StreamController for value changes
-  final _valueController = StreamController<T?>.broadcast();
-  final _statusController = StreamController<FormFieldControllerStatus>.broadcast();
+  /// The internal value notifier for the form control.
+  final ValueNotifier<T?> _valueNotifier;
 
-  /// Gets the current value of the form control.
-  T? get value => _value;
+  /// A list of validator functions that validate the control's value.
+  final List<FormError? Function(T? value)> _validators;
 
-  /// A stream that emits the value of the form control whenever it changes.
-  Stream<T?> get valueChanges => _valueController.stream;
+  /// The current error of the form control, if any.
+  FormError? _error;
 
-  /// A stream that emits the status whenever it changes.
-  Stream<FormFieldControllerStatus> get statusChanges => _statusController.stream;
+  /// The current status of the form control.
+  FormControlStatus _status = FormControlStatus.pristine;
 
-  /// Gets the current validation error message, if any.
-  String? get error => _error;
+  /// A stream controller that broadcasts value changes.
+  final _valueChangesController = StreamController<T?>.broadcast();
 
-  /// Gets the current status of the form control.
-  FormFieldControllerStatus get status => _status;
-
-  /// Indicates whether the form control is valid (no validation errors).
-  bool get isValid => _error == null;
-
-  /// Creates a new form control with an optional initial value and a list of validators.
+  /// Creates a [FormControl] with an initial value and optional validators.
   ///
-  /// - [initialValue]: The initial value of the control.
-  /// - [validators]: A list of functions that validate the value and return error messages if invalid.
-  FormControl(T? initialValue, {List<String? Function(T? value)> validators = const []})
-      : _value = initialValue,
-        _validators = validators {
-    validate(); // Validate initial value
+  /// - [initialValue]: The initial value of the form control.
+  /// - [validators]: A list of validation functions for the control.
+  FormControl(
+    T? initialValue, {
+    List<FormError? Function(T? value)>? validators,
+  })  : _valueNotifier = ValueNotifier<T?>(initialValue),
+        _validators = validators ?? [] {
+    // Listen to value changes and validate the control.
+    _valueNotifier.addListener(() {
+      _valueChangesController.add(_valueNotifier.value);
+      _validate();
+    });
   }
 
-  /// Updates the value of the form control and triggers validation.
+  /// Adds additional validations to the form control.
   ///
-  /// - [newValue]: The new value to set.
+  /// - [validation]: A list of validation functions to be added.
+  void addValidations(List<FormError? Function(T?)> validation) =>
+      _validators.addAll(validation);
+
+  /// Sets a new value for the form control and marks it as dirty.
+  ///
+  /// - [newValue]: The new value to be set.
   void setValue(T? newValue) {
-    if (_value != newValue) {
-      _value = newValue;
-      _status = FormFieldControllerStatus.dirty;
-      _statusController.add(_status);
-      _valueController.add(_value);
-      validate();
+    if (_valueNotifier.value != newValue) {
+      _valueNotifier.value = newValue;
+      _status = FormControlStatus.dirty;
     }
   }
 
-  /// Marks the control as touched without changing its value.
-  void markAsDirty() {
-    if (_status != FormFieldControllerStatus.dirty) {
-      _status = FormFieldControllerStatus.dirty;
-      _statusController.add(_status);
-    }
-  }
-
-  /// Resets the control to its initial state.
-  void reset([T? value]) {
-    _value = value;
+  /// Validates the form control and updates its error and status.
+  void _validate() {
     _error = null;
-    _status = FormFieldControllerStatus.pure;
-    _statusController.add(_status);
-    _valueController.add(_value);
-    validate();
-  }
-
-  /// Validates the form control using its validators.
-  ///
-  /// Returns `true` if the value is valid, otherwise `false`.
-  bool validate() {
     for (final validator in _validators) {
-      final error = validator(_value);
-      if (error != null && error.isNotEmpty) {
-        _error = error;
-        return false;
+      _error = validator(_valueNotifier.value);
+      if (_error != null) {
+        _status = FormControlStatus.invalid;
+        break;
       }
     }
-    _error = null;
-    return true;
+    if (_error == null) {
+      _status = FormControlStatus.valid;
+    }
   }
 
-  /// Disposes of the stream controllers.
+  /// Resets the form control to its initial state.
+  void reset() {
+    _valueNotifier.value = null;
+    _error = null;
+    _status = FormControlStatus.pristine;
+  }
+
+  /// Indicates whether the form control is valid.
+  bool get isValid {
+    _validate();
+    return _status == FormControlStatus.valid;
+  }
+
+  /// Indicates whether the form control is dirty.
+  bool get isDirty {
+    _validate();
+    return _status == FormControlStatus.dirty;
+  }
+
+  /// The current error of the form control, if any.
+  FormError? get error => _error;
+
+  /// The current value of the form control.
+  T? get value => _valueNotifier.value;
+
+  /// The notifier for the control's value, allowing reactive updates.
+  ValueNotifier<T?> get notifier => _valueNotifier;
+
+  /// A stream that emits value changes for the control.
+  Stream<T?> get valueChanges => _valueChangesController.stream;
+
+  /// Disposes of the control, releasing resources.
   void dispose() {
-    _valueController.close();
-    _statusController.close();
+    _valueChangesController.close();
+    _valueNotifier.dispose();
   }
 }
 
@@ -101,8 +129,8 @@ abstract class FormModel {
 
   /// Validates all form controls in the form.
   ///
-  /// Returns `true` if all controls are valid, otherwise `false`.
-  bool validate() => controls.every((control) => control.validate());
+  /// Returns `true` if all controls are valid.
+  bool validate() => controls.every((control) => control.isValid);
 
   /// Resets all form controls to their initial state.
   void reset() {
@@ -115,9 +143,9 @@ abstract class FormModel {
   bool get isValid => controls.every((control) => control.isValid);
 
   /// Indicates whether any control in the form is dirty.
-  bool get isDirty => controls.any((control) => control.status == FormFieldControllerStatus.dirty);
+  bool get isDirty => controls.any((control) => control.isDirty);
 
-  /// Disposes of all form controls.
+  /// Disposes of all form controls in the form.
   void dispose() {
     for (final control in controls) {
       control.dispose();
@@ -126,15 +154,18 @@ abstract class FormModel {
 }
 
 /// A reactive form controller that manages a form model and listens for changes.
+///
+/// [T] is the type of the form model that extends [FormModel].
 class ReactiveForm<T extends FormModel> {
+  /// The form model managed by the reactive form.
   final T model;
+
+  /// A stream controller that broadcasts validity changes.
   final _validityController = StreamController<bool>.broadcast();
 
-  /// Creates a new reactive form for the given model.
-  ///
-  /// - [model]: The form model to manage.
+  /// Creates a [ReactiveForm] with the given form model.
   ReactiveForm(this.model) {
-    // Listen to all controls for changes and emit validity updates
+    // Listen to value changes for all controls and update validity.
     for (final control in model.controls) {
       control.valueChanges.listen((_) {
         _validityController.add(isValid);

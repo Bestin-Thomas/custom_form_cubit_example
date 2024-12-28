@@ -26,12 +26,14 @@ class LoginScreen extends StatelessWidget {
 class ContactFormScreen extends StatelessWidget {
   const ContactFormScreen({super.key});
 
-  void _handleSubmit(
-      {required BuildContext context,
-      required ReactiveForm<LoginFormModel> form}) {
+  void _handleSubmit({
+    required BuildContext context,
+    required ReactiveForm<LoginFormModel> form,
+  }) {
     if (form.isValid) {
       // Here you would typically send the data to your backend
       final formData = (form.model).toString();
+
       log('Form submitted with data: $formData');
 
       // Show success message
@@ -45,9 +47,10 @@ class ContactFormScreen extends StatelessWidget {
     }
   }
 
-  void _handleCubit(
-          {required BuildContext context,
-          required ReactiveForm<LoginFormModel> form}) =>
+  void _handleCubit({
+    required BuildContext context,
+    required ReactiveForm<LoginFormModel> form,
+  }) =>
       context.read<LoginFormCubit>().updateValues(
             loginForm: form.model,
           );
@@ -63,52 +66,52 @@ class ContactFormScreen extends StatelessWidget {
         child: BlocSelector<LoginFormCubit, LoginFormState, LoginFormModel>(
             selector: (state) => state.loginForm,
             builder: (context, form) {
-              final formControl = ReactiveForm(form);
-              return ReactiveFormWidget(
+              final ReactiveForm<LoginFormModel> formControl = ReactiveForm(form);
+              return ReactiveFormWidget<LoginFormModel>(
                 form: formControl,
-                child: Column(
-                  children: [
-                    ReactiveFormField(
-                      control: formControl.model.name,
-                      onChange: (value) => _handleCubit(
-                        context: context,
-                        form: formControl,
+                builder: (context, loginFormModel) => Column(
+                    children: [
+                      ReactiveFormField(
+                        control: loginFormModel.name,
+                        onChange: (value) => _handleCubit(
+                          context: context,
+                          form: formControl,
+                        ),
+                        label: 'Name',
+                        hint: 'Enter your full name',
                       ),
-                      label: 'Name',
-                      hint: 'Enter your full name',
-                    ),
-                    const SizedBox(height: 16),
-                    ReactiveFormField(
-                      control: formControl.model.email,
-                      onChange: (value) => _handleCubit(
-                        context: context,
-                        form: formControl,
+                      const SizedBox(height: 16),
+                      ReactiveFormField(
+                        control: loginFormModel.email,
+                        onChange: (value) => _handleCubit(
+                          context: context,
+                          form: formControl,
+                        ),
+                        label: 'Email',
+                        hint: 'Enter your email',
+                        keyboardType: TextInputType.emailAddress,
                       ),
-                      label: 'Email',
-                      hint: 'Enter your email',
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 16),
-                    ReactiveFormField(
-                      control: formControl.model.phone,
-                      onChange: (value) => _handleCubit(
-                        context: context,
-                        form: formControl,
+                      const SizedBox(height: 16),
+                      ReactiveFormField(
+                        control: loginFormModel.phone,
+                        onChange: (value) => _handleCubit(
+                          context: context,
+                          form: formControl,
+                        ),
+                        label: 'Phone',
+                        hint: 'Enter your phone number',
+                        keyboardType: TextInputType.phone,
                       ),
-                      label: 'Phone',
-                      hint: 'Enter your phone number',
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => _handleSubmit(
-                        context: context,
-                        form: formControl,
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => _handleSubmit(
+                          context: context,
+                          form: formControl,
+                        ),
+                        child: const Text('Submit'),
                       ),
-                      child: const Text('Submit'),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               );
             }),
       ),

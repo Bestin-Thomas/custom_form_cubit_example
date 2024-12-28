@@ -1,9 +1,8 @@
-
 import 'package:flutter/material.dart';
 
 import 'form_field_controller.dart';
 
-class ReactiveFormField extends StatefulWidget {
+class ReactiveFormField extends StatelessWidget {
   final FormControl<String> control;
   final ValueSetter<String>? onChange;
   final String label;
@@ -20,47 +19,22 @@ class ReactiveFormField extends StatefulWidget {
   });
 
   @override
-  State<ReactiveFormField> createState() => _ReactiveFormFieldState();
-}
-
-class _ReactiveFormFieldState extends State<ReactiveFormField> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.control.value);
-
-    widget.control.valueChanges.listen((value) {
-      if (_controller.text != value) {
-        _controller.text = value ?? '';
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<String?>(
-      stream: widget.control.valueChanges,
-      builder: (context, _) {
-        return TextField(
-          controller: _controller,
+    return ValueListenableBuilder<String?>(
+      valueListenable: control.notifier,
+      builder: (context, value, child) {
+        return TextFormField(
+          initialValue: value,
           decoration: InputDecoration(
-            labelText: widget.label,
-            hintText: widget.hint,
-            errorText: widget.control.error,
+            labelText: label,
+            hintText: hint,
+            errorText: control.error?.message,
             border: const OutlineInputBorder(),
           ),
-          keyboardType: widget.keyboardType,
-          onChanged: (value) {
-            widget.control.setValue(value);
-            widget.onChange?.call(value);
+          keyboardType: keyboardType,
+          onChanged: (newValue) {
+            control.setValue(newValue);
+            onChange?.call(newValue);
           },
         );
       },

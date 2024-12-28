@@ -12,41 +12,65 @@ class LoginFormState with _$LoginFormState {
 
 class LoginFormModel extends FormModel {
   final name = FormControl<String>(null, validators: [
-    (value) => value?.isEmpty ?? true ? 'Name is required' : null,
+    (value) => value?.isEmpty ?? true ? FormError('Name is required') : null,
     (value) =>
-        (value?.length ?? 0) < 2 ? 'Name must be at least 2 characters' : null,
+        (value?.length ?? 0) < 2 ? FormError('Name must be at least 2 characters') : null,
   ]);
 
   final email = FormControl<String>(null, validators: [
-    (value) => value?.isEmpty ?? true ? 'Email is required' : null,
-    (value) => !FormValidators.isValidEmail(value ?? '')
-        ? 'Invalid email format'
-        : null,
+    (value) => value?.isEmpty ?? true ? FormError('Email is required') : null,
+    (value) => FormValidators.validateEmail(value ?? ''),
   ]);
 
   final phone = FormControl<String>(null, validators: [
-    (value) => value?.isEmpty ?? true ? 'Phone is required' : null,
-    (value) => !FormValidators.isValidPhone(value ?? '')
-        ? 'Invalid phone format'
-        : null,
+    (value) => value?.isEmpty ?? true ? FormError('Phone is required') : null,
+    (value) => FormValidators.validatePhone(value ?? ''),
   ]);
 
   @override
   List<FormControl> get controls => [name, email, phone];
+
+  LoginFormModel() {
+    // Custom validation after initialization
+    email.addValidations( [_validateEmailDependsOnName,]);
+  }
+
+  FormError? _validateEmailDependsOnName(String ? value) {
+    // Check if the 'name' field is empty, and if so, return the validation error
+    if (name.value?.isEmpty ?? true) {
+      return FormError('Name is required for email');
+    }
+    return null;
+  }
+
+
 }
 
 class FormValidators {
-  static bool isValidEmail(String email) {
-    final emailRegExp = RegExp(
-      r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+',
-    );
-    return emailRegExp.hasMatch(email);
+  static FormError? validateName(String? value) {
+    if (value == null || value.isEmpty) {
+      return FormError('Name is required');
+    } else if (value.length < 2) {
+      return FormError('Name must be at least 2 characters');
+    }
+    return null;
   }
 
-  static bool isValidPhone(String phone) {
-    final phoneRegExp = RegExp(
-      r'^\+?[\d\s-]{10,}$',
-    );
-    return phoneRegExp.hasMatch(phone);
+  static FormError? validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return FormError('Email is required');
+    } else if (!RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zAZ0-9]+').hasMatch(value)) {
+      return FormError('Invalid email format');
+    }
+    return null;
+  }
+
+  static FormError? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return FormError('Phone is required');
+    } else if (!RegExp(r'^\+?[\d\s-]{10,}$').hasMatch(value)) {
+      return FormError('Invalid phone format');
+    }
+    return null;
   }
 }
