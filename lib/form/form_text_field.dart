@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'form_field_controller.dart';
 
 class ReactiveFormField extends StatelessWidget {
-  final FormControl<String> control;
+  final GenericFieldController<String> control;
   final ValueSetter<String>? onChange;
   final String label;
   final String hint;
   final TextInputType? keyboardType;
+  final TextInputAction textInputAction;
+  final bool autofocus;
 
   const ReactiveFormField({
     super.key,
@@ -16,11 +18,13 @@ class ReactiveFormField extends StatelessWidget {
     required this.hint,
     this.keyboardType,
     this.onChange,
+    this.textInputAction = TextInputAction.next,
+    this.autofocus = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<String?>(
+    return ValueListenableBuilder<String?>( 
       valueListenable: control.notifier,
       builder: (context, value, child) {
         return TextFormField(
@@ -31,6 +35,8 @@ class ReactiveFormField extends StatelessWidget {
             errorText: control.error?.message,
             border: const OutlineInputBorder(),
           ),
+          autofocus: autofocus,
+          textInputAction: textInputAction,
           keyboardType: keyboardType,
           onChanged: (newValue) {
             control.setValue(newValue);

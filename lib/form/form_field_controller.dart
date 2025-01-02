@@ -16,12 +16,12 @@ class FormError {
 /// - [dirty]: The control's value has been changed.
 /// - [valid]: The control's value passes all validations.
 /// - [invalid]: The control's value fails at least one validation.
-enum FormControlStatus { pristine, dirty, valid, invalid }
+enum GenericFieldStatus { pristine, dirty, valid, invalid }
 
 /// A form control that manages the value, validation, and state of a field.
 ///
 /// [T] is the type of the value managed by the control.
-class FormControl<T> {
+class GenericFieldController<T> {
   /// The internal value notifier for the form control.
   final ValueNotifier<T?> _valueNotifier;
 
@@ -32,16 +32,16 @@ class FormControl<T> {
   FormError? _error;
 
   /// The current status of the form control.
-  FormControlStatus _status = FormControlStatus.pristine;
+  GenericFieldStatus _status = GenericFieldStatus.pristine;
 
   /// A stream controller that broadcasts value changes.
   final _valueChangesController = StreamController<T?>.broadcast();
 
-  /// Creates a [FormControl] with an initial value and optional validators.
+  /// Creates a [GenericFieldController] with an initial value and optional validators.
   ///
   /// - [initialValue]: The initial value of the form control.
   /// - [validators]: A list of validation functions for the control.
-  FormControl(
+  GenericFieldController(
     T? initialValue, {
     List<FormError? Function(T? value)>? validators,
   })  : _valueNotifier = ValueNotifier<T?>(initialValue),
@@ -65,7 +65,7 @@ class FormControl<T> {
   void setValue(T? newValue) {
     if (_valueNotifier.value != newValue) {
       _valueNotifier.value = newValue;
-      _status = FormControlStatus.dirty;
+      _status = GenericFieldStatus.dirty;
     }
   }
 
@@ -75,12 +75,12 @@ class FormControl<T> {
     for (final validator in _validators) {
       _error = validator(_valueNotifier.value);
       if (_error != null) {
-        _status = FormControlStatus.invalid;
+        _status = GenericFieldStatus.invalid;
         break;
       }
     }
     if (_error == null) {
-      _status = FormControlStatus.valid;
+      _status = GenericFieldStatus.valid;
     }
   }
 
@@ -88,19 +88,19 @@ class FormControl<T> {
   void reset() {
     _valueNotifier.value = null;
     _error = null;
-    _status = FormControlStatus.pristine;
+    _status = GenericFieldStatus.pristine;
   }
 
   /// Indicates whether the form control is valid.
   bool get isValid {
     _validate();
-    return _status == FormControlStatus.valid;
+    return _status == GenericFieldStatus.valid;
   }
 
   /// Indicates whether the form control is dirty.
   bool get isDirty {
     _validate();
-    return _status == FormControlStatus.dirty;
+    return _status == GenericFieldStatus.dirty;
   }
 
   /// The current error of the form control, if any.
@@ -123,9 +123,9 @@ class FormControl<T> {
 }
 
 /// Represents a base class for a form model containing multiple form controls.
-abstract class FormModel {
+abstract class GenericFormModel {
   /// A list of all form controls in the form.
-  List<FormControl> get controls;
+  List<GenericFieldController> get controls;
 
   /// Validates all form controls in the form.
   ///
@@ -155,16 +155,16 @@ abstract class FormModel {
 
 /// A reactive form controller that manages a form model and listens for changes.
 ///
-/// [T] is the type of the form model that extends [FormModel].
-class ReactiveForm<T extends FormModel> {
+/// [T] is the type of the form model that extends [GenericFormModel].
+class GenericFormController<T extends GenericFormModel> {
   /// The form model managed by the reactive form.
   final T model;
 
   /// A stream controller that broadcasts validity changes.
   final _validityController = StreamController<bool>.broadcast();
 
-  /// Creates a [ReactiveForm] with the given form model.
-  ReactiveForm(this.model) {
+  /// Creates a [GenericFormController] with the given form model.
+  GenericFormController(this.model) {
     // Listen to value changes for all controls and update validity.
     for (final control in model.controls) {
       control.valueChanges.listen((_) {
@@ -191,3 +191,4 @@ class ReactiveForm<T extends FormModel> {
     _validityController.close();
   }
 }
+

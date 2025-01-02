@@ -1,6 +1,7 @@
+import 'package:custom_form_cubit_example/login_screen.dart';
 import 'package:flutter/material.dart';
 
-import 'login_screen.dart';
+import 'application/login_form_state.dart';
 
 void main() {
   runApp(const MyApp());
@@ -9,14 +10,20 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Form Example',
       theme: ThemeData(
+        primarySwatch: Colors.blue,
       ),
-      home: const LoginScreen(),
+      home: Scaffold(
+        appBar: AppBar(title: const Text('Login Form')),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: LoginScreen(),
+        ),
+      ),
     );
   }
 }

@@ -7,7 +7,7 @@ import 'application/login_cubit.dart';
 import 'application/login_form_state.dart';
 import 'form/form_field_controller.dart';
 import 'form/form_text_field.dart';
-import 'form/reactive_form_widget.dart';
+import 'form/reactive_form_builder.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -16,7 +16,7 @@ class LoginScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocProvider(
-        create: (_) => LoginFormCubit(),
+        create: (_) => RegistrationFormCubit(),
         child: ContactFormScreen(),
       ),
     );
@@ -28,7 +28,7 @@ class ContactFormScreen extends StatelessWidget {
 
   void _handleSubmit({
     required BuildContext context,
-    required ReactiveForm<LoginFormModel> form,
+    required GenericFormController<RegistrationFormModel> form,
   }) {
     if (form.isValid) {
       // Here you would typically send the data to your backend
@@ -42,18 +42,16 @@ class ContactFormScreen extends StatelessWidget {
       );
       _handleCubit(
         context: context,
-        form: form,
+        model: form.model,
       );
     }
   }
 
   void _handleCubit({
     required BuildContext context,
-    required ReactiveForm<LoginFormModel> form,
+    required RegistrationFormModel model,
   }) =>
-      context.read<LoginFormCubit>().updateValues(
-            loginForm: form.model,
-          );
+      context.read<RegistrationFormCubit>().updateForm(model);
 
   @override
   Widget build(BuildContext context) {
@@ -63,55 +61,49 @@ class ContactFormScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: BlocSelector<LoginFormCubit, LoginFormState, LoginFormModel>(
-            selector: (state) => state.loginForm,
+        child: BlocSelector<RegistrationFormCubit, RegistrationFormState, RegistrationFormModel>(
+            selector: (state) => state.formModel,
             builder: (context, form) {
-              final ReactiveForm<LoginFormModel> formControl = ReactiveForm(form);
-              return ReactiveFormWidget<LoginFormModel>(
+              final GenericFormController<RegistrationFormModel> formControl = GenericFormController(form);
+              return ReactiveFormBuilder<RegistrationFormModel>(
                 form: formControl,
+                onChange: (formModel) => _handleCubit(context: context, model: formModel),
                 builder: (context, loginFormModel) => Column(
-                    children: [
-                      ReactiveFormField(
-                        control: loginFormModel.name,
-                        onChange: (value) => _handleCubit(
-                          context: context,
-                          form: formControl,
-                        ),
-                        label: 'Name',
-                        hint: 'Enter your full name',
-                      ),
-                      const SizedBox(height: 16),
-                      ReactiveFormField(
-                        control: loginFormModel.email,
-                        onChange: (value) => _handleCubit(
-                          context: context,
-                          form: formControl,
-                        ),
-                        label: 'Email',
-                        hint: 'Enter your email',
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 16),
-                      ReactiveFormField(
-                        control: loginFormModel.phone,
-                        onChange: (value) => _handleCubit(
-                          context: context,
-                          form: formControl,
-                        ),
-                        label: 'Phone',
-                        hint: 'Enter your phone number',
-                        keyboardType: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () => _handleSubmit(
-                          context: context,
-                          form: formControl,
-                        ),
-                        child: const Text('Submit'),
-                      ),
-                    ],
-                  ),
+                  children: [
+                    ReactiveFormField(
+                      control: loginFormModel.name,
+                      label: 'Name',
+                      hint: 'Enter your full name',
+                    ),
+                    const SizedBox(height: 16),
+                    ReactiveFormField(
+                      control: loginFormModel.email,
+                      label: 'Email',
+                      hint: 'Enter your email',
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+                    ReactiveFormField(
+                      control: loginFormModel.phone,
+                      label: 'Phone',
+                      hint: 'Enter your phone number',
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 24),
+                    BlocSelector<RegistrationFormCubit, RegistrationFormState, bool>(
+                        selector: (state) => state.isLoading,
+                        builder: (context, isLoading) => ElevatedButton(
+                              onPressed: () => context.read<RegistrationFormCubit>().setLoading(
+                                    formModel: form,
+                                    loading: !isLoading,
+                                  ),
+                              child: Text(
+                                'Submit',
+                                style: TextStyle(color: isLoading ? Colors.red : Colors.blue),
+                              ),
+                            )),
+                  ],
+                ),
               );
             }),
       ),
