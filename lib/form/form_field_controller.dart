@@ -26,10 +26,10 @@ class GenericFieldController<T> {
   final ValueNotifier<T?> _valueNotifier;
 
   /// A list of validator functions that validate the control's value.
-  final List<FormError? Function(T? value)> _validators;
+  final List<String? Function(T? value)> _validators;
 
   /// The current error of the form control, if any.
-  FormError? _error;
+  final ValueNotifier<String?> _error = ValueNotifier(null);
 
   /// The current status of the form control.
   GenericFieldStatus _status = GenericFieldStatus.pristine;
@@ -43,20 +43,20 @@ class GenericFieldController<T> {
   /// - [validators]: A list of validation functions for the control.
   GenericFieldController(
     T? initialValue, {
-    List<FormError? Function(T? value)>? validators,
+    List<String? Function(T? value)>? validators,
   })  : _valueNotifier = ValueNotifier<T?>(initialValue),
         _validators = validators ?? [] {
     // Listen to value changes and validate the control.
     _valueNotifier.addListener(() {
       _valueChangesController.add(_valueNotifier.value);
-      _validate();
+      validate();
     });
   }
 
   /// Adds additional validations to the form control.
   ///
   /// - [validation]: A list of validation functions to be added.
-  void addValidations(List<FormError? Function(T?)> validation) =>
+  void addValidations(List<String? Function(T?)> validation) =>
       _validators.addAll(validation);
 
   /// Sets a new value for the form control and marks it as dirty.
@@ -70,16 +70,16 @@ class GenericFieldController<T> {
   }
 
   /// Validates the form control and updates its error and status.
-  void _validate() {
-    _error = null;
+  void validate() {
+    _error.value = null;
     for (final validator in _validators) {
-      _error = validator(_valueNotifier.value);
-      if (_error != null) {
+      _error.value = validator(_valueNotifier.value);
+      if (_error.value != null) {
         _status = GenericFieldStatus.invalid;
         break;
       }
     }
-    if (_error == null) {
+    if (_error.value == null) {
       _status = GenericFieldStatus.valid;
     }
   }
@@ -87,24 +87,24 @@ class GenericFieldController<T> {
   /// Resets the form control to its initial state.
   void reset() {
     _valueNotifier.value = null;
-    _error = null;
+    _error.value = null;
     _status = GenericFieldStatus.pristine;
   }
 
   /// Indicates whether the form control is valid.
   bool get isValid {
-    _validate();
+    validate();
     return _status == GenericFieldStatus.valid;
   }
 
   /// Indicates whether the form control is dirty.
   bool get isDirty {
-    _validate();
+    validate();
     return _status == GenericFieldStatus.dirty;
   }
 
   /// The current error of the form control, if any.
-  FormError? get error => _error;
+  ValueNotifier<String?> get error => _error;
 
   /// The current value of the form control.
   T? get value => _valueNotifier.value;
@@ -130,7 +130,11 @@ abstract class GenericFormModel {
   /// Validates all form controls in the form.
   ///
   /// Returns `true` if all controls are valid.
-  bool validate() => controls.every((control) => control.isValid);
+  void validate() {
+    for (final controller in controls){
+      controller.validate();
+    }
+  }
 
   /// Resets all form controls to their initial state.
   void reset() {
@@ -141,6 +145,7 @@ abstract class GenericFormModel {
 
   /// Indicates whether all form controls are valid.
   bool get isValid => controls.every((control) => control.isValid);
+
 
   /// Indicates whether any control in the form is dirty.
   bool get isDirty => controls.any((control) => control.isDirty);

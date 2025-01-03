@@ -1,7 +1,7 @@
-import 'package:custom_form_cubit_example/login_screen.dart';
+import 'package:custom_form_cubit_example/login/login_screen.dart';
 import 'package:flutter/material.dart';
 
-import 'application/login_form_state.dart';
+import 'login/application/login_form_state.dart';
 
 void main() {
   runApp(const MyApp());

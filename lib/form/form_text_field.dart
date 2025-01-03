@@ -24,25 +24,49 @@ class ReactiveFormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<String?>( 
+    return ValueListenableBuilder<String?>(
       valueListenable: control.notifier,
-      builder: (context, value, child) {
-        return TextFormField(
-          initialValue: value,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: hint,
-            errorText: control.error?.message,
-            border: const OutlineInputBorder(),
-          ),
-          autofocus: autofocus,
-          textInputAction: textInputAction,
-          keyboardType: keyboardType,
-          onChanged: (newValue) {
-            control.setValue(newValue);
-            onChange?.call(newValue);
-          },
-        );
+      builder: (context, value, _) {
+        return ValueListenableBuilder(
+            valueListenable: control.error,
+            builder: (context, error, _) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 8,
+                children: [
+                  TextFormField(
+                    initialValue: value,
+                    decoration: InputDecoration(
+                      labelText: label,
+                      hintText: hint,
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: error != null ? Colors.red : Colors.green),
+                      ),
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: error != null ? Colors.red : Colors.black),
+                      ),
+                    ),
+                    autofocus: autofocus,
+                    textInputAction: textInputAction,
+                    keyboardType: keyboardType,
+                    onChanged: (newValue) {
+                      control.setValue(newValue);
+                      onChange?.call(newValue);
+                    },
+                  ),
+                  if (error != null)
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8,
+                      ),
+                      child: Text(
+                        error,
+                        style: TextStyle( color: Colors.red),
+                      ),
+                    ),
+                ],
+              );
+            });
       },
     );
   }

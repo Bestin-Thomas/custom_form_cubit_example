@@ -1,4 +1,4 @@
-import '../form/application/generic_form_cubit.dart';
+import '../../form/application/generic_form_cubit.dart';
 import 'login_form_state.dart';
 
 class RegistrationFormCubit
