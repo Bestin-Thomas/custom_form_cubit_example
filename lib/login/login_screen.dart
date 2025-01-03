@@ -27,9 +27,9 @@ class ContactFormScreen extends StatelessWidget {
 
   void _handleSubmit({
     required BuildContext context,
-    required GenericFormController<RegistrationFormModel> formController,
+    required VoidCallback onSubmit,
   }) {
-    formController.isValid;
+    onSubmit.call();
     context.read<RegistrationFormCubit>().submit(
       validAction: () {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -59,12 +59,10 @@ class ContactFormScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: BlocSelector<RegistrationFormCubit, RegistrationFormState, RegistrationFormModel>(
             selector: (state) => state.formModel,
-            builder: (context, model) {
-              final formController =  GenericFormController(model);
-              return ReactiveFormBuilder<RegistrationFormModel>(
-                  form: formController,
+            builder: (context, model) => ReactiveFormBuilder<RegistrationFormModel>(
+                  form: model,
                   onChange: (formModel) => _handleCubit(context: context, model: formModel),
-                  builder: (context, loginFormModel) => Column(
+                  builder: (context, loginFormModel, onSubmit) => Column(
                     children: [
                       ReactiveFormField(
                         control: loginFormModel.name,
@@ -89,7 +87,7 @@ class ContactFormScreen extends StatelessWidget {
                       BlocSelector<RegistrationFormCubit, RegistrationFormState, bool>(
                           selector: (state) => state.isLoading,
                           builder: (context, isLoading) => ElevatedButton(
-                                onPressed: () => _handleSubmit(context: context, formController: formController),
+                                onPressed: () => _handleSubmit(context: context, onSubmit: onSubmit),
                                 child: Text(
                                   'Submit',
                                   style: TextStyle(color: isLoading ? Colors.red : Colors.blue),
@@ -97,8 +95,7 @@ class ContactFormScreen extends StatelessWidget {
                               )),
                     ],
                   ),
-                );
-            }),
+                )),
       ),
     );
   }

@@ -1,6 +1,5 @@
 import 'package:custom_form_cubit_example/address/application/address_details_cubit.dart';
 import 'package:custom_form_cubit_example/address/application/address_details_state.dart';
-import 'package:custom_form_cubit_example/form/form_field_controller.dart';
 import 'package:custom_form_cubit_example/form/reactive_form_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,12 +31,10 @@ class AddressForm extends StatelessWidget {
       padding: EdgeInsets.all(16),
       child: BlocSelector<AddressDetailsCubit, AddressDetailsState, AddressDetailsFormModel>(
           selector: (state) => state.formModel,
-          builder: (context, model) {
-            final formController = GenericFormController(model);
-            return ReactiveFormBuilder<AddressDetailsFormModel>(
-              form: formController,
+          builder: (context, model) => ReactiveFormBuilder<AddressDetailsFormModel>(
+              form: model,
               onChange: (formModel) => context.read<AddressDetailsCubit>().updateForm(formModel),
-              builder: (context, form) => Column(
+              builder: (context, form, onSubmit) => Column(
                 spacing: 10,
                 children: [
                   ReactiveFormField(
@@ -72,8 +69,7 @@ class AddressForm extends StatelessWidget {
                   ),
                 ],
               ),
-            );
-          }),
+            )),
     );
   }
 }
