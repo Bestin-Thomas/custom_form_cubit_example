@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:ui';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,16 +37,12 @@ abstract class GenericFormCubit<T extends GenericFormModel,
     final currentState = state;
     final formModel = currentState.formModel;
     formModel.validate();
-    final  value = formModel.controls.map( (e) =>  e.value.toString(),);
-    log(value.join(', '));
-    final  error = formModel.controls.map( (e) =>  e.error.value ?? '',);
-    log(error.join(', '));
-    emit(createState(model: formModel));
     if (formModel.isValid) {
       validAction.call();
     } else {
       inValidAction?.call();
     }
+    emit(createState(model: formModel));
   }
 
   S createState({
